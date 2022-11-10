@@ -21,7 +21,7 @@
         state: present
         cidr: "{{pubsub1}}"
         map_public: yes
-        tags:
+        resource_tags:
           Name: PubSub1
       register: PubSub1_out
 
