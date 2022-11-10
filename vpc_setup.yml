@@ -1,0 +1,124 @@
+---
+- hosts: localhost
+  connection: local 
+  gather_facts: False
+  tasks:
+    - name: Importing VPC variables
+      include_vars: vars/vpc_setup
+    - name: create a Vprofile VPC 
+      ec2_vpc_net:
+        name: "{{vpc_name}}"
+        cidr_block: "{{vpc_cidr}}"
+        region: "{{region}}"
+      register: vpc_out
+    - name: creating 1st public subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{vpc_out.vpc.id}}"
+        cidr: "{{pubsub1}}"
+        region: "{{region}}"
+        az: "{{zone1}}"
+        map_public: yes
+        tags:
+          Name: PubSub1
+      register: PubSub1_out
+    - name: creating 2nd public subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{vpc_out.vpc.id}}"
+        cidr: "{{pubsub2}}"
+        region: "{{region}}"
+        az: "{{zone2}}"
+        map_public: yes
+        tags:
+          Name: PubSub2
+      register: PubSub2_out
+    - name: creating 3rd public subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{vpc_out.vpc.id}}"
+        cidr: "{{pubsub3}}"
+        region: "{{region}}"
+        az: "{{zone3}}"
+        map_public: yes
+        tags:
+          Name: PubSub3
+      register: PubSub3_out
+    - name: creating 1st private subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{vpc_out.vpc.id}}"
+        cidr: "{{prvsub1}}"
+        region: "{{region}}"
+        az: "{{zone1}}"
+        tags:
+          Name: PrvSub1
+      register: PrvSub1_out
+    - name: creating 2nd private subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{vpc_out.vpc.id}}"
+        cidr: "{{prvsub2}}"
+        region: "{{region}}"
+        az: "{{zone2}}"
+        tags:
+          Name: PrvSub2
+      register: PrvSub2_out
+    - name: creating 3rd private subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{vpc_out.vpc.id}}"
+        cidr: "{{prvsub3}}"
+        region: "{{region}}"
+        az: "{{zone3}}"
+        tags:
+          Name: PrvSub3
+      register: PrvSub3_out
+    - name: Internet Gateway setup 
+      ec2_vpc_igw:
+        vpc_id: "{{vpc_out.vpc.id}}"
+        state: present
+        region: "{{region}}"
+        tags:
+          Name: Vprofile_IGW
+      register: igw_out
+    - name: Set up public subnet route table
+      ec2_vpc_route_table:
+        vpc_id: "{{vpc_out.vpc.id}}"
+        region: "{{region}}"
+        tags:
+          Name: Public_RT
+        subnets:
+          - "{{ PubSub1_out.subnet.id }}"
+          - "{{ PubSub2_out.subnet.id }}"
+          - "{{ PubSub3_out.subnet_id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw_out.gateway_id }}"
+      register: publicRT_out
+    - name: Create new nat gateway and allocate new EIP if a nat gateway does not yet exist in the subnet.
+      ec2_vpc_nat_gateway:
+        state: present
+        subnet_id: "{{ PubSub1_out.subnet.id }}"
+        wait: yes
+        region: "{{region}}"
+        if_exist_do_not_create: true
+      register: NATGW_out
+    - name: Private route table
+      ec2_vpc_route_table:
+        vpc_id: "{{vpc_out.vpc.id}}"
+        region: "{{region}}"
+        tags:
+          Name: Private_RT
+        subnets:
+          - "{{ PrvSub1_out.subnet.id }}"
+          - "{{ PrvSub2_out.subnet.id }}"
+          - "{{ PrvSub3_out.subnet.id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            instance_id: "{{ NATGW_out.nat_gateway_id }}"
+      register: privateRT_out
+    - name: Copying all the variable values to a file
+      copy:
+        content: "vpcid: {{ vpc_out.vpc.id }}\npubsub1id: {{ PubSub1_out.subnet.id }}\npubsub2id: {{ PubSub2_out.subnet.id }}\npubsub3id: {{ PubSub3_out.subnet.id }}\nprivsub1id: {{ PrvSub1_out.subnet.id }}\nprivsub2id: {{ PrvSub2_out.subnet.id }}\nprivsub3id: {{ PrvSub3_out.subnet.id }}\nigwid: {{ igw_out.gateway_id }}\npubRTid: {{ publicRT_out.route_table.id }}\nNATGWid: {{ NATGW_out.nat_gateway_id }}\nprivRTid: {{ privateRT_out.route_table.id }}\n"
+        dest: vars/output_vars
