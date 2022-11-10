@@ -13,11 +13,11 @@
       register: vpc_out
     - name: creating 1st public subnet
       ec2_vpc_subnet:
-        state: present
         vpc_id: "{{vpc_out.vpc.id}}"
-        cidr: "{{pubsub1}}"
         region: "{{region}}"
         az: "{{zone1}}"
+        state: present
+        cidr: "{{pubsub1}}"
         map_public: yes
         tags:
           Name: PubSub1
