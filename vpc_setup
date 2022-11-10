@@ -2,15 +2,15 @@ vpc_name: "Vprofile_VPC"
 
 vpc_cidr: "172.20.0.0/16"
 
-pubsub1: "172.20.1.0/24"
-pubsub2: "172.20.2.0/24"
-pubsub3: "172.20.3.0/24"
-prvsub1: "172.20.4.0/24"
-prvsub2: "172.20.5.0/24"
-prvsub3: "172.20.3.0/24"
+pubsub1: 172.20.1.0/24
+pubsub2: 172.20.2.0/24
+pubsub3: 172.20.3.0/24
+prvsub1: 172.20.4.0/24
+prvsub2: 172.20.5.0/24
+prvsub3: 172.20.3.0/24
 
 region: "us-east-2"
 
-zone1: "us-east-2a"
-zone2: "us-east-2b"
-zone3: "us-east-2c"
+zone1: us-east-2a
+zone2: us-east-2b
+zone3: us-east-2c
