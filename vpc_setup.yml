@@ -85,6 +85,7 @@
         tags:
           Name: Vprofile_IGW
       register: igw_out
+
     - name: Set up public subnet route table
       ec2_vpc_route_table:
         vpc_id: "{{vpc_out.vpc.id}}"
@@ -94,11 +95,12 @@
         subnets:
           - "{{ PubSub1_out.subnet.id }}"
           - "{{ PubSub2_out.subnet.id }}"
-          - "{{ PubSub3_out.subnet_id }}"
+          - "{{ PubSub3_out.subnet.id }}"
         routes:
           - dest: 0.0.0.0/0
             gateway_id: "{{ igw_out.gateway_id }}"
       register: publicRT_out
+
     - name: Create new nat gateway and allocate new EIP if a nat gateway does not yet exist in the subnet.
       ec2_vpc_nat_gateway:
         state: present
@@ -121,9 +123,6 @@
           - dest: 0.0.0.0/0
             instance_id: "{{ NATGW_out.nat_gateway_id }}"
       register: privateRT_out
-
-    - set_fact:
-         vpcid: "{{vpc_out.vpc.id}}"
 
     - name: Copying all the variable values to a file
       copy:
